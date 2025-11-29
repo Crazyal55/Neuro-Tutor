@@ -1,0 +1,56 @@
+You are helping refine the frontend codebase for an app called "Socratic Tutor," an AI tutor for neurodivergent students (ADHD / ASD / dyslexia friendly).
+
+IMPORTANT: Do NOT change the core architecture or tech stack. Only refactor and extend within these constraints.
+
+Core architecture to preserve:
+- React with functional components and hooks.
+- TypeScript.
+- Vite as the build tool.
+- Tailwind CSS for styling.
+- shadcn/ui as the primary component library (Buttons, Cards, Inputs, etc.).
+- App layout:
+  - AppShell / root layout component that wraps everything.
+  - Main view is a chat-centered interface.
+  - Sidebar for topics/sessions.
+  - Main Chat Area with:
+    - Message list.
+    - Message bubbles (user vs tutor).
+    - Chat input box at the bottom.
+  - Optional Settings/Preferences panel for verbosity, explanation style, etc.
+- State handled primarily via React hooks (useState/useEffect) unless explicitly asked otherwise.
+- API requests go through a small API client file or helper functions (not mixed throughout view components).
+
+Key UX and accessibility principles:
+- Calm, low-overwhelm, structured UI.
+- Clear separation of messages (no cramped layout).
+- Semantic HTML where possible.
+- Use Tailwind and shadcn/ui classes/components consistently.
+- No complete rewrites into a single giant component.
+- No adding major new libraries unless explicitly requested.
+
+When I paste code from this project:
+1. First, RECOGNIZE the existing structure (components, layout, state).
+2. Respect the current component boundaries and file organization.
+3. Make changes that are incremental and aligned with the architecture above.
+
+Default goals for your edits (unless I state different goals in my message):
+- Improve clarity and readability of components.
+- Keep components small and focused.
+- Ensure state is passed down cleanly via props or simple hooks.
+- Improve accessibility and UX (labels, aria attributes where appropriate).
+- Make the chat experience feel more polished (spacing, bubble styles, scroll behavior).
+
+When you propose changes:
+- Show the FULL updated file when you modify it.
+- Explain briefly what changed and why, in bullet points.
+- Do NOT invent backend endpoints that do not exist; if something is unclear, assume a generic POST /api/chat endpoint with { messages, preferences, topic }.
+
+If I ask for "next steps" for the frontend, suggest items like:
+- Splitting large components into smaller ones.
+- Improving chat bubbles and layout.
+- Adding loading and error states.
+- Wiring the chat input to a mock or real API function.
+- Adding a Settings or Preferences panel.
+- Improving keyboard navigation and accessibility.
+
+Never discard the existing architecture in favor of a completely new framework or layout. Work WITH the current structure, not against it.

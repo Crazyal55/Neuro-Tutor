@@ -1,0 +1,114 @@
+You are improving and generating frontend code for a React + TypeScript + Vite + Tailwind + shadcn/ui project.
+
+Your goal: 
+Create a simple, clean, modern, fast-loading chat interface for the app "Socratic Tutor." 
+Use ONLY the existing tech stack and maintain the architecture described below.
+
+------------------------------------
+ARCHITECTURE RULES (DO NOT BREAK)
+------------------------------------
+- React functional components.
+- TypeScript.
+- Vite build.
+- Tailwind CSS for styling.
+- shadcn/ui for Buttons, Cards, Inputs, etc.
+- Layout:
+  Main app layout contains:
+    - Header (small, minimal)
+    - Chat area in the center
+    - Message list that scrolls
+    - Chat input at the bottom
+- Use small focused components:
+    - MessageList
+    - MessageBubble
+    - ChatInput
+    - MainChatPage (or ChatPage)
+- Do NOT create a single giant file.
+- Keep the design lightweight and fast-loading.
+
+------------------------------------
+VISUAL STYLE REQUIREMENTS
+------------------------------------
+- Clean, minimalist design.
+- Light background, calm color palette.
+- Plenty of spacing (avoid sensory overload).
+- Rounded corners, subtle shadows.
+- Messages should have:
+    - User messages right-aligned
+    - AI messages left-aligned
+    - Soft bubble shapes
+- Page should feel modern and uncluttered.
+
+------------------------------------
+FUNCTIONAL REQUIREMENTS
+------------------------------------
+Before backend integration, use FAKE test responses.
+
+When the user sends a message:
+- Immediately display the user message.
+- Then simulate a response by pushing a fake "AI" message like:
+    "This is a test response from the mock Socratic Tutor."
+
+Simulate response delay:
+- 600–900ms timeout (feel free to choose a clean pattern).
+
+------------------------------------
+STATE REQUIREMENTS
+------------------------------------
+Use React hooks:
+- const [messages, setMessages] = useState<Message[]>([])
+- const [input, setInput] = useState("")
+
+Define a Message type:
+type Message = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
+
+------------------------------------
+WHAT TO OUTPUT
+------------------------------------
+When I give you a file or folder of code:
+1. Read it and preserve the architecture.
+2. Improve structure if needed.
+3. Generate modern, clean UI components.
+4. Include full updated files in your response.
+5. DO NOT delete existing functionality unless explicitly told.
+6. DO NOT invent new frameworks or libraries.
+
+When I ask for a "starter frontend":
+- Generate minimal working files:
+    - App.tsx
+    - ChatPage.tsx (or Chat.tsx)
+    - components/MessageList.tsx
+    - components/MessageBubble.tsx
+    - components/ChatInput.tsx
+- Wire them together with fake test responses.
+
+------------------------------------
+DEFAULT MOCK AI BEHAVIOR
+------------------------------------
+Use this simulated response function for now:
+
+function mockAIResponse() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve("This is a test response from the mock Socratic Tutor. 😊")
+    }, 700)
+  })
+}
+
+------------------------------------
+FINAL GOAL
+------------------------------------
+Produce a simple but modern front-end that:
+- loads instantly,
+- looks good before backend work,
+- uses fake responses,
+- and follows the architecture above.
+
+------------------------------------
+END OF REQUIREMENTS
+------------------------------------
+Note: use folder Frontend to put code
