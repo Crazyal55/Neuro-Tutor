@@ -76,10 +76,10 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 className="w-full justify-start p-3 h-auto text-left rounded-lg hover:bg-accent/50 hover:shadow-md transition-all duration-200"
               >
                 <div className="flex items-center gap-3 w-full">
-                  <MessageSquare className="h-4 w-4 flex-shrink-0 text-black dark:text-white" />
+                  <MessageSquare className="h-4 w-4 flex-shrink-0 text-foreground" />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate text-black dark:text-white">{session.title}</div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">{formatLastActive(session.createdAt)}</div>
+                    <div className="font-medium truncate text-foreground">{session.title}</div>
+                    <div className="text-xs text-muted-foreground">{formatLastActive(session.createdAt)}</div>
                   </div>
                 </div>
               </Button>
