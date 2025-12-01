@@ -206,7 +206,7 @@ export const ChatPage: React.FC = () => {
             </div>
           ) : (
             <>
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                 <MessageList messages={activeSession?.messages || []} />
               </div>
               {isLoading && <TypingIndicator />}
