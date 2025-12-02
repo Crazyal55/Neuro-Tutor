@@ -24,7 +24,7 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/Crazyal55/Neuro-Tutor.git
-   cd "Project Rough"
+   cd "Neuro-Tutor"
    ```
 
 2. **Configure OpenRouter API Key**:
