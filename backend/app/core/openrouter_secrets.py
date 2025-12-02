@@ -18,12 +18,13 @@ DEFAULT_OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY_HERE"
 @lru_cache
 def get_openrouter_api_key() -> str:
     """
-    Get OpenRouter API key from environment or default.
+    Get OpenRouter API key from settings with environment fallback.
     
     Returns:
         str: OpenRouter API key
     """
-    return os.getenv("OPENROUTER_API_KEY", DEFAULT_OPENROUTER_API_KEY)
+    from app.core.config import settings
+    return settings.openrouter_api_key_from_env
 
 
 @lru_cache
@@ -34,4 +35,4 @@ def get_default_model() -> str:
     Returns:
         str: Default model name
     """
-    return os.getenv("DEFAULT_MODEL", "qwen2.5:7b-instruct")
+    return os.getenv("DEFAULT_MODEL", "openai/gpt-3.5-turbo")

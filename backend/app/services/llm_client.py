@@ -95,6 +95,8 @@ class OpenRouterClient:
     
     def _validate_api_key(self) -> bool:
         """Validate that API key is properly configured."""
+        logger.info(f"🔑 API Key validation - Length: {len(self.api_key) if self.api_key else 0}")
+        logger.info(f"🔑 API Key first 10 chars: {self.api_key[:10] if self.api_key else 'None'}")
         return (
             self.api_key and 
             self.api_key != "YOUR_OPENROUTER_API_KEY_HERE" and
@@ -129,7 +131,7 @@ class OpenRouterClient:
             "max_tokens": max_tokens
         }
         
-        async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
+        async with httpx.AsyncClient(timeout=60) as client:  # Increased timeout
             response = await client.post(
                 f"{self.base_url}/chat/completions",
                 headers=headers,
