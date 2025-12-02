@@ -10,6 +10,7 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 - **Session Management**: Persistent chat sessions with automatic saving
 - **Theme Support**: Light/dark mode with comfortable reading options
 - **Responsive Design**: Works seamlessly on desktop and mobile
+- **Modern Stack**: Built with React 19, FastAPI, and Tailwind CSS v3
 
 ## 🚀 Quick Start
 
@@ -22,8 +23,8 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd neuro-tutor
+   git clone https://github.com/Crazyal55/Neuro-Tutor.git
+   cd "Project Rough"
    ```
 
 2. **Configure OpenRouter API Key**:
@@ -33,6 +34,7 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
    
    # Edit backend/.env and add your API key
    OPENROUTER_API_KEY=your_openrouter_api_key_here
+   DEFAULT_MODEL=anthropic/claude-3-haiku
    ```
 
 3. **Start the application**:
@@ -74,7 +76,7 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
    ```
 
 3. **Access the application**:
-   - Frontend: http://localhost:5180
+   - Frontend: http://localhost:5173
    - Backend: http://localhost:8000
 
 ## 🧪 Testing Integration
@@ -91,11 +93,11 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 
 2. **Test Backend**:
    - Visit http://localhost:8000/health
-   - Should return "OK" status
+   - Should return `{"status": "healthy", "service": "Neuro Tutor", "version": "1.0.0"}`
 
 3. **Test Frontend**:
-   - Open http://localhost:5173 (Docker) or http://localhost:5180 (Local)
-   - Interface should load with chat functionality
+   - Open http://localhost:5173
+   - Interface should load with chat functionality, theme toggle, and preferences drawer
 
 4. **Test AI Integration**:
    - Open browser Developer Tools (F12) → Network tab
@@ -110,7 +112,9 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 - Messages trigger network requests to backend
 - AI responses use Socratic methodology (asking questions, not giving answers)
 - Session persistence across page refreshes
-- Loading states while waiting for responses
+- Loading states with typing indicators while waiting for responses
+- Theme toggle between light and dark modes
+- User preferences (verbosity, explanation style, reading mode) are saved
 - User-friendly error messages
 
 ❌ **Common Issues**:
@@ -122,16 +126,19 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 ## 🏗️ Architecture
 
 ### Backend (FastAPI + Python)
-- **Framework**: FastAPI with async support
+- **Framework**: FastAPI 0.104.1 with async support
 - **AI Integration**: OpenRouter API with Socratic methodology
-- **Database**: SQLAlchemy with session management
-- **Authentication**: JWT-based (planned)
+- **Database**: SQLAlchemy 2.0.23 with SQLite for session management
+- **Dependencies**: Pydantic 2.0.3, uvicorn 0.24.0, python-dotenv 1.0.0
 
 ### Frontend (React + TypeScript)
-- **Framework**: Vite + React 18 + TypeScript
-- **UI Library**: shadcn/ui + Tailwind CSS
-- **State Management**: React hooks with localStorage
-- **Styling**: Tailwind CSS with theme support
+- **Framework**: Vite 5.4.14 + React 19.2.0
+- **UI Library**: shadcn/ui components + Tailwind CSS 3.4.18
+- **State Management**: React hooks with localStorage for persistence
+- **Key Dependencies**: 
+  - Radix UI components (checkbox, dialog, icons, label, scroll-area, select, slider, slot)
+  - Lucide React 0.554.0 for icons
+  - clsx 2.1.1 and tailwind-merge 3.4.0 for styling
 
 ### Key Components
 ```
@@ -139,22 +146,47 @@ socratic-tutor-frontend/
 ├── src/
 │   ├── components/
 │   │   ├── chat/           # Chat interface components
+│   │   │   ├── ChatInput.tsx     # Message input component
+│   │   │   ├── ChatSidebar.tsx   # Session history sidebar
+│   │   │   ├── MessageBubble.tsx # Individual message display
+│   │   │   ├── MessageList.tsx   # Conversation container
+│   │   │   └── TypingIndicator.tsx # Loading indicator
 │   │   ├── layout/          # Header, sidebar, theming
-│   │   └── ui/            # shadcn/ui components
+│   │   │   ├── Header.tsx         # Main app header
+│   │   │   ├── PreferencesDrawer.tsx # Settings panel
+│   │   │   └── ThemeToggle.tsx    # Dark/light mode switcher
+│   │   ├── ui/            # shadcn/ui components
+│   │   │   ├── button.tsx, checkbox.tsx, input.tsx, label.tsx
+│   │   │   ├── scroll-area.tsx, select.tsx, sheet.tsx, slider.tsx
+│   │   │   └── ... (other UI primitives)
+│   │   └── ThemeProvider.tsx # Global theme context
 │   ├── services/
-│   │   └── chatService.ts   # API client layer
-│   └── pages/
-│       └── ChatPage.tsx     # Main application page
+│   │   └── chatService.ts   # API client layer for backend communication
+│   ├── pages/
+│   │   └── ChatPage.tsx     # Main application page
+│   ├── lib/
+│   │   └── utils.ts         # Utility functions
+│   └── App.jsx              # Root application component
 ```
 
 ```
 backend/
 ├── app/
-│   ├── api/                 # API endpoints
-│   ├── core/                # Configuration, secrets
-│   ├── models/              # Database models
-│   └── services/            # Business logic
-└── tests/                  # Test suite
+│   ├── api/
+│   │   └── chat.py          # Chat API endpoints
+│   ├── core/
+│   │   ├── config.py        # Application configuration
+│   │   ├── db.py           # Database setup and session management
+│   │   └── openrouter_secrets.py # API key management
+│   ├── models/
+│   │   └── chat.py          # Database models for sessions and messages
+│   ├── services/
+│   │   ├── llm_client.py    # OpenRouter API integration
+│   │   └── sessions.py      # Session management logic
+│   └── main.py              # FastAPI application entry point
+├── tests/
+│   └── test_chat.py         # Test suite for chat functionality
+└── requirements.txt         # Python dependencies
 ```
 
 ## 📚 How It Works
@@ -180,25 +212,26 @@ What do you know about how gravity works between objects?"
 
 ### Environment Variables
 
-**Backend (.env)**:
+**Backend (backend/.env)**:
 ```bash
 OPENROUTER_API_KEY=your_api_key_here
-DATABASE_URL=sqlite:///./neuro_tutor.db  # Default SQLite
+DEFAULT_MODEL=anthropic/claude-3-haiku
+DATABASE_URL=sqlite:///./data/neuro_tutor.db  # Default SQLite
 DEBUG=true
 ```
 
-**Frontend (.env)**:
+**Frontend (socratic-tutor-frontend/.env)**:
 ```bash
 VITE_API_URL=http://localhost:8000
 ```
 
 ### Customization
 
-You can customize the AI behavior through the preferences panel:
-- **Verbosity Level**: How detailed responses should be
-- **Explanation Style**: Concise, step-by-step, or analogy-based
-- **Reading Mode**: Compact or comfortable spacing
-- **Visual Aids**: Include diagrams and examples
+You can customize the AI behavior through the preferences panel (accessible via the settings button in the header):
+- **Verbosity Level**: How detailed responses should be (slider control)
+- **Explanation Style**: Concise, step-by-step, or analogy-based (select dropdown)
+- **Reading Mode**: Compact or comfortable spacing (checkbox)
+- **Visual Aids**: Include diagrams and examples (checkbox)
 
 ## 🐛 Troubleshooting
 
@@ -207,21 +240,21 @@ You can customize the AI behavior through the preferences panel:
 **"Mock response" appearing**:
 ```bash
 # Check API key is set
-echo $OPENROUTER_API_KEY  # Should show your key
+cat backend/.env | grep OPENROUTER_API_KEY
 
-# Or check .env file
-cat backend/.env
+# Test API key directly
+cd backend && python test_openrouter.py
 ```
 
 **CORS errors**:
 - Ensure backend is running on port 8000
 - Check frontend VITE_API_URL points to correct backend
-- Restart both services
+- Restart both services with `docker compose up --build`
 
 **Frontend not loading**:
 - Check if port 5173 is available
 - Try `npm run dev` in frontend directory
-- Clear browser cache
+- Clear browser cache and localStorage
 
 **Backend connection failed**:
 - Verify OpenRouter API key is valid
@@ -234,6 +267,9 @@ cat backend/.env
 2. Review [FRONTEND.md](FRONTEND.md) for frontend-specific setup
 3. Review [BACKEND.md](BACKEND.md) for backend-specific setup
 4. Check [OPENROUTER_SETUP.md](OPENROUTER_SETUP.md) for API key help
+5. See [TESTING_GUIDE.md](TESTING_GUIDE.md) for detailed testing procedures
+6. Reference [FILE_STRUCTURE.md](FILE_STRUCTURE.md) for complete project structure
+7. Check [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment guide
 
 ## 🤝 Contributing
 
@@ -243,6 +279,8 @@ This project is designed to be neurodivergent-friendly and inclusive. When contr
 2. Ensure UI is accessible and user-friendly
 3. Test with different learning preferences
 4. Maintain clear, simple communication
+5. Use TypeScript for frontend development
+6. Follow existing code patterns and component structure
 
 ## 📄 License
 
@@ -251,3 +289,15 @@ This project is designed to be neurodivergent-friendly and inclusive. When contr
 ---
 
 **Ready to start learning?** Open http://localhost:5173 and begin your Socratic journey! 🚀
+
+## 📊 Current Status
+
+This is an actively developed project with:
+- ✅ Working Docker Compose setup
+- ✅ Functional React 19 + Vite frontend
+- ✅ FastAPI backend with OpenRouter integration
+- ✅ Session persistence and theme support
+- ✅ Responsive design with shadcn/ui components
+- ✅ Comprehensive error handling and logging
+
+The application is ready for testing and further development.

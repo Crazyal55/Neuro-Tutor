@@ -592,7 +592,7 @@ aa4c39bc-6acb-45ed-b49d-f6ed693849d5 @{id=dcc24adb-61bf-4a96-b58...}
 - Error handling in place
 
 **🎯 GitHub Repository**: ✅ Ready for team deployment
-- Successfully pushed to https://github.com/Crazyal55/Group1
+- Successfully pushed to https://github.com/Crazyal55/Neuro-Tutor
 - Environment templates provided (.env.example files)
 - Comprehensive .gitignore protecting sensitive data
 - Complete documentation for team onboarding
@@ -611,8 +611,8 @@ Your team can now run the complete Socratic Tutor application:
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/Crazyal55/Group1.git
-cd Group1
+git clone https://github.com/Crazyal55/Neuro-Tutor.git
+cd "Project Rough"
 
 # 2. Set up environment
 cp backend/.env.example backend/.env
