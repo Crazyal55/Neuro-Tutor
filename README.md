@@ -18,6 +18,7 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 
 - [Docker](https://www.docker.com/get-started/) (recommended) or Node.js 18+ and Python 3.9+
 - [OpenRouter API Key](https://openrouter.ai/) for AI responses
+- **Note**: Python 3.13+ may require additional dependency configuration (see troubleshooting below)
 
 ### Option 1: Docker (Recommended)
 
@@ -102,9 +103,30 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
 4. **Test AI Integration**:
    - Open browser Developer Tools (F12) → Network tab
    - Send a message: "Why does the moon cause tides?"
-   - Verify POST request to `/api/chat`
+   - Verify POST request to `/api/chat/`
    - **Important**: Response should NOT be "This is a test response from mock Socratic Tutor. 😊"
    - Should receive thoughtful Socratic questions from OpenRouter
+
+   **API Testing via curl**:
+   ```bash
+   curl -X POST http://localhost:8000/api/chat/ \
+     -H "Content-Type: application/json" \
+     -d '{
+       "messages": [
+         {
+           "id": "msg1",
+           "role": "user", 
+           "content": "Why does the moon cause tides?"
+         }
+       ],
+       "preferences": {
+         "verbosity_level": 3,
+         "explanation_style": "step_by_step",
+         "reading_mode": "comfortable",
+         "visual_aids": true
+       }
+     }'
+   ```
 
 ### Expected Behavior
 
@@ -260,6 +282,19 @@ cd backend && python test_openrouter.py
 - Verify OpenRouter API key is valid
 - Check internet connection
 - View backend logs: `docker compose logs backend`
+
+### Python 3.13+ Compatibility
+
+If using Python 3.13+, you may encounter dependency installation issues:
+
+```bash
+# Solution for Python 3.13:
+pip install "pydantic>=2.5.0" "pydantic-settings>=2.1.0"
+pip install fastapi uvicorn[standard] pytest httpx sqlalchemy requests
+```
+
+**Common Error**: `pydantic-core` requires Rust compilation
+**Solution**: Use newer versions with pre-built wheels as shown above
 
 ### Getting Help
 
