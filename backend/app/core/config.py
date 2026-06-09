@@ -43,13 +43,28 @@ class Settings(BaseSettings):
         env_key = os.getenv("OPENROUTER_API_KEY")
         return env_key if env_key else self.openrouter_api_key
     
-    # Default model settings
-    default_model: str = "openai/gpt-3.5-turbo"  # Use widely supported model
+    # Database settings
+    database_url: str = "sqlite:///./neuro_tutor.db"
+
+    # Default model settings (canonical default — override via DEFAULT_MODEL env)
+    default_model: str = "openai/gpt-3.5-turbo"
     default_temperature: float = 0.7
     default_max_tokens: int = 1000
     
     # Request settings
     request_timeout: int = 30  # seconds
+    rate_limit_per_minute: int = 20
+    auto_migrate: bool = True
+
+    # Vector store / RAG settings
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "materials"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimension: int = 384
+    rag_top_k: int = 5
+    rag_score_threshold: float = 0.35
+    upload_max_bytes: int = 50 * 1024 * 1024
+    uploads_dir: str = "./data/uploads"
 
 
 # Global settings instance
@@ -61,6 +76,6 @@ def get_cors_config():
     return {
         "allow_origins": settings.cors_origins_list,
         "allow_credentials": True,
-        "allow_methods": ["*"],
-        "allow_headers": ["*"],
+        "allow_methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
     }

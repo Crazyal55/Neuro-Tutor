@@ -35,7 +35,7 @@ A neurodivergent-friendly Socratic learning assistant that guides students throu
    
    # Edit backend/.env and add your API key
    OPENROUTER_API_KEY=your_openrouter_api_key_here
-   DEFAULT_MODEL=anthropic/claude-3-haiku
+   DEFAULT_MODEL=openai/gpt-3.5-turbo
    ```
 
 3. **Start the application**:
@@ -237,7 +237,7 @@ What do you know about how gravity works between objects?"
 **Backend (backend/.env)**:
 ```bash
 OPENROUTER_API_KEY=your_api_key_here
-DEFAULT_MODEL=anthropic/claude-3-haiku
+DEFAULT_MODEL=openai/gpt-3.5-turbo
 DATABASE_URL=sqlite:///./data/neuro_tutor.db  # Default SQLite
 DEBUG=true
 ```

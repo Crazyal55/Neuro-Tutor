@@ -9,9 +9,13 @@ services:
       - ./backend/.env
     environment:
       - DATABASE_URL=sqlite:///./data/neuro_tutor.db
+      - QDRANT_URL=http://qdrant:6333
     volumes:
       - ./backend:/app
       - neuro_tutor_db:/app/data
+    depends_on:
+      qdrant:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=5)"]
       interval: 30s
@@ -24,18 +28,49 @@ services:
     build:
       context: ./socratic-tutor-frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api
     ports:
       - "5173:5173"
-    environment:
-      - VITE_API_URL=http://backend:8000/api
-    volumes:
-      - ./socratic-tutor-frontend:/app
-      - /app/node_modules
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+  postgres:
+    profiles: ["postgres"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: neurotutor
+      POSTGRES_PASSWORD: neurotutor
+      POSTGRES_DB: neurotutor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neurotutor -d neurotutor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   neuro_tutor_db:
     driver: local
+  qdrant_storage:
+    driver: local
+  postgres_data:
+    driver: local
+
+# Optional PostgreSQL usage:
+#   docker compose --profile postgres up --build
+#   DATABASE_URL=postgresql+psycopg2://neurotutor:neurotutor@postgres:5432/neurotutor

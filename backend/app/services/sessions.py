@@ -12,7 +12,11 @@ from app.models.chat import ChatSession, MessageModel
 from app.core.db import get_db
 
 
-def create_session(db: Session, title: Optional[str] = None) -> ChatSession:
+def create_session(
+    db: Session,
+    title: Optional[str] = None,
+    subject_id: Optional[str] = None,
+) -> ChatSession:
     """
     Create a new chat session.
     
@@ -30,6 +34,7 @@ def create_session(db: Session, title: Optional[str] = None) -> ChatSession:
     db_session = ChatSession(
         id=session_id,
         title=title,
+        subject_id=subject_id,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )
@@ -159,6 +164,50 @@ def get_last_message_preview(db: Session, session_id: str, max_length: int = 50)
         content = content[:max_length] + "..."
     
     return content
+
+
+def update_session_subject(
+    db: Session,
+    session_id: str,
+    subject_id: Optional[str],
+) -> Optional[ChatSession]:
+    """Link or unlink a chat session to a subject."""
+    session = get_session(db, session_id)
+    if session is None:
+        return None
+
+    session.subject_id = subject_id
+    session.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(session)
+    return session
+
+
+def update_session_title(db: Session, session_id: str, title: str) -> Optional[ChatSession]:
+    """
+    Update a session title.
+
+    Args:
+        db: Database session
+        session_id: Session identifier
+        title: New session title
+
+    Returns:
+        Optional[ChatSession]: Updated session if found
+    """
+    session = get_session(db, session_id)
+    if not session:
+        return None
+
+    cleaned_title = title.strip()
+    if not cleaned_title:
+        return session
+
+    session.title = cleaned_title
+    session.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(session)
+    return session
 
 
 def delete_session(db: Session, session_id: str) -> bool:

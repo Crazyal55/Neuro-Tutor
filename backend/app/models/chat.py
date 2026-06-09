@@ -37,12 +37,14 @@ class ChatRequest(BaseModel):
     messages: List[Message] = Field(..., description="List of chat messages")
     preferences: Optional[Preferences] = Field(default=None, description="User preferences")
     session_id: Optional[str] = Field(default=None, description="Session identifier")
+    subject_id: Optional[str] = Field(default=None, description="Subject for RAG context")
 
 
 class ChatResponse(BaseModel):
     """Response model for chat endpoint."""
     session_id: str = Field(..., description="Session identifier")
     reply_message: Message = Field(..., description="Assistant's reply message")
+    sources: List["SourceCitation"] = Field(default_factory=list)
 
 
 class SessionSummary(BaseModel):
@@ -52,6 +54,16 @@ class SessionSummary(BaseModel):
     created_at: datetime = Field(..., description="Session creation time")
     last_updated_at: datetime = Field(..., description="Last message time")
     message_count: int = Field(..., description="Number of messages in session")
+    last_message_preview: Optional[str] = Field(
+        default=None,
+        description="Preview of the most recent message",
+    )
+    subject_id: Optional[str] = Field(default=None, description="Linked subject for RAG")
+
+
+class SessionUpdateRequest(BaseModel):
+    """Request model for updating a session."""
+    title: str = Field(..., min_length=1, max_length=200, description="Session title")
 
 
 class SessionListResponse(BaseModel):
@@ -72,10 +84,11 @@ class ChatSession(Base):
     
     id = Column(String, primary_key=True, index=True)
     title = Column(String, nullable=False)
+    subject_id = Column(String, ForeignKey("subjects.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
-    # Relationship with messages
+    subject = relationship("Subject", back_populates="chat_sessions")
     messages = relationship("MessageModel", back_populates="session", cascade="all, delete-orphan")
     
     def __repr__(self):
@@ -97,3 +110,8 @@ class MessageModel(Base):
     
     def __repr__(self):
         return f"<MessageModel(id='{self.id}', role='{self.role}', session_id='{self.session_id}')>"
+
+
+from app.models.subjects import SourceCitation  # noqa: E402
+
+ChatResponse.model_rebuild()

@@ -6,9 +6,9 @@ Uses Socratic methodology to guide student learning.
 """
 
 import logging
-import asyncio
+import json
 from datetime import datetime
-from typing import List, Dict
+from typing import AsyncIterator, Dict, List
 import uuid
 import httpx
 
@@ -95,8 +95,6 @@ class OpenRouterClient:
     
     def _validate_api_key(self) -> bool:
         """Validate that API key is properly configured."""
-        logger.info(f"🔑 API Key validation - Length: {len(self.api_key) if self.api_key else 0}")
-        logger.info(f"🔑 API Key first 10 chars: {self.api_key[:10] if self.api_key else 'None'}")
         return (
             self.api_key and 
             self.api_key != "YOUR_OPENROUTER_API_KEY_HERE" and
@@ -140,14 +138,64 @@ class OpenRouterClient:
             response.raise_for_status()
             data = response.json()
             
-            # CONSOLE LOG: Log OpenRouter response for debugging
             response_content = data["choices"][0]["message"]["content"]
-            logger.info(f"🎯 OPENROUTER RESPONSE: {response_content[:100]}...")
-            print(f"🎯 OPENROUTER API RESPONSE: {response_content}")
+            if settings.debug:
+                logger.debug("OpenRouter response: %s", response_content)
             
             return response_content
+
+    async def _stream_openrouter_api(
+        self,
+        messages: List[Dict],
+        model: str,
+        temperature: float,
+        max_tokens: int,
+    ) -> AsyncIterator[str]:
+        """Stream OpenRouter API tokens."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://neurotutor.local",
+            "X-Title": "NeuroTutor-Dev",
+        }
+
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+
+        async with httpx.AsyncClient(timeout=60) as client:
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if not line or not line.startswith("data: "):
+                        continue
+                    data = line[6:]
+                    if data == "[DONE]":
+                        break
+                    chunk = json.loads(data)
+                    delta = chunk["choices"][0].get("delta", {})
+                    content = delta.get("content")
+                    if content:
+                        if settings.debug:
+                            logger.debug("OpenRouter stream token received")
+                        yield content
     
-    async def generate_response(self, messages: List[Message], preferences: Preferences, session_id: str = None):
+    async def generate_response(
+        self,
+        messages: List[Message],
+        preferences: Preferences,
+        session_id: str = None,
+        rag_context: str = "",
+    ):
         """
         Generate a Socratic response using OpenRouter API.
         
@@ -171,6 +219,8 @@ class OpenRouterClient:
             
             # Build Socratic system prompt
             system_prompt = SocraticPromptBuilder.build_system_prompt(preferences)
+            if rag_context:
+                system_prompt = f"{system_prompt}{rag_context}"
             
             # Format messages for API
             formatted_messages = self._format_messages_for_api(messages, system_prompt)
@@ -179,8 +229,8 @@ class OpenRouterClient:
             model = getattr(preferences, 'model', self.default_model) or self.default_model
             temperature = getattr(preferences, 'temperature', self.default_temperature) or self.default_temperature
             
-            logger.info(f"🚀 Generating response using OpenRouter with model {model}")
-            print(f"🚀 CALLING OPENROUTER API WITH MODEL: {model}")
+            if settings.debug:
+                logger.debug("Generating response with model %s", model)
             
             # Call OpenRouter API
             response_content = await self._call_openrouter_api(
@@ -198,8 +248,7 @@ class OpenRouterClient:
                 timestamp=datetime.utcnow()
             )
             
-            logger.info(f"✅ Generated response successfully for session {session_id}")
-            print(f"✅ SUCCESSFULLY GENERATED REAL OPENROUTER RESPONSE")
+            logger.info("Generated response for session %s", session_id)
             
             return {
                 "reply_message": reply_message,
@@ -230,12 +279,74 @@ class OpenRouterClient:
             "session_id": session_id or str(uuid.uuid4())
         }
 
+    async def stream_response(
+        self,
+        messages: List[Message],
+        preferences: Preferences,
+        session_id: str | None = None,
+        rag_context: str = "",
+    ) -> AsyncIterator[str]:
+        """Stream a Socratic response token-by-token."""
+        if not self._validate_api_key():
+            logger.warning("OpenRouter API key not properly configured, using fallback")
+            yield "Please configure your OpenRouter API key to use AI tutoring."
+            return
+
+        if not preferences:
+            preferences = Preferences()
+
+        system_prompt = SocraticPromptBuilder.build_system_prompt(preferences)
+        if rag_context:
+            system_prompt = f"{system_prompt}{rag_context}"
+        formatted_messages = self._format_messages_for_api(messages, system_prompt)
+        model = getattr(preferences, "model", self.default_model) or self.default_model
+        temperature = (
+            getattr(preferences, "temperature", self.default_temperature)
+            or self.default_temperature
+        )
+
+        if settings.debug:
+            logger.debug("Streaming response with model %s", model)
+
+        try:
+            async for token in self._stream_openrouter_api(
+                formatted_messages,
+                model,
+                temperature,
+                self.default_max_tokens,
+            ):
+                yield token
+        except httpx.HTTPStatusError as error:
+            logger.error(
+                "OpenRouter HTTP error: %s - %s",
+                error.response.status_code,
+                error.response.text,
+            )
+            yield (
+                "I'm having trouble connecting to the AI service. "
+                "Let me help you with a different approach."
+            )
+        except httpx.TimeoutException:
+            logger.error("OpenRouter API timeout")
+            yield "The connection timed out. Let's try a more focused question."
+        except Exception as error:
+            logger.error("Error streaming response: %s", error)
+            yield (
+                "I'm experiencing technical difficulties. "
+                "How can I help you with a simpler question?"
+            )
+
 
 # Global OpenRouter client instance
 llm_client = OpenRouterClient()
 
 
-async def generate_response(messages: List[Message], preferences: Preferences = None, session_id: str = None):
+async def generate_response(
+    messages: List[Message],
+    preferences: Preferences = None,
+    session_id: str = None,
+    rag_context: str = "",
+):
     """
     Generate a reply to user's message using Socratic methodology with OpenRouter.
     
@@ -247,7 +358,25 @@ async def generate_response(messages: List[Message], preferences: Preferences = 
     Returns:
         Dict containing reply_message and session_id
     """
-    return await llm_client.generate_response(messages, preferences, session_id)
+    return await llm_client.generate_response(
+        messages, preferences, session_id, rag_context=rag_context
+    )
+
+
+async def stream_response(
+    messages: List[Message],
+    preferences: Preferences = None,
+    session_id: str = None,
+    rag_context: str = "",
+) -> AsyncIterator[str]:
+    """Stream a reply using Socratic methodology with OpenRouter."""
+    async for token in llm_client.stream_response(
+        messages,
+        preferences or Preferences(),
+        session_id,
+        rag_context=rag_context,
+    ):
+        yield token
 
 
 def create_message(role: str, content: str) -> Message:

@@ -5,7 +5,6 @@ This file is for development convenience only.
 In production, ALWAYS use environment variables / secret manager.
 """
 
-import os
 from functools import lru_cache
 
 # WARNING:
@@ -30,9 +29,10 @@ def get_openrouter_api_key() -> str:
 @lru_cache
 def get_default_model() -> str:
     """
-    Get default model from environment or fallback.
+    Get default model from application settings.
     
     Returns:
         str: Default model name
     """
-    return os.getenv("DEFAULT_MODEL", "openai/gpt-3.5-turbo")
+    from app.core.config import settings
+    return settings.default_model

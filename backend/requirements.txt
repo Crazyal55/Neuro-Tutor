@@ -4,6 +4,16 @@ pydantic==2.0.3
 pydantic-settings==2.0.3
 python-dotenv==1.0.0
 pytest==7.4.3
+pytest-asyncio==0.23.8
+pytest-cov==4.1.0
 httpx==0.25.2
 sqlalchemy==2.0.23
 requests==2.31.0
+alembic==1.13.3
+slowapi==0.1.9
+psycopg2-binary==2.9.10
+qdrant-client==1.12.1
+fastembed==0.4.2
+python-pptx==1.0.2
+pymupdf==1.24.14
+python-docx==1.1.2

@@ -4,11 +4,18 @@
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000/api';
 
+export interface SourceCitation {
+  filename: string;
+  locator: string;
+  score: number;
+}
+
 export interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp?: string;
+  sources?: SourceCitation[];
 }
 
 export interface Preferences {
@@ -22,11 +29,19 @@ export interface ChatRequest {
   messages: Message[];
   preferences?: Preferences;
   session_id?: string;
+  subject_id?: string | null;
 }
 
 export interface ChatResponse {
   session_id: string;
   reply_message: Message;
+  sources?: SourceCitation[];
+}
+
+export interface ChatStreamHandlers {
+  onToken: (token: string) => void;
+  onDone: (response: ChatResponse) => void;
+  onError: (error: Error) => void;
 }
 
 export interface SessionSummary {
@@ -35,6 +50,8 @@ export interface SessionSummary {
   created_at: string;
   last_updated_at: string;
   message_count: number;
+  last_message_preview?: string | null;
+  subject_id?: string | null;
 }
 
 export interface SessionListResponse {
@@ -47,7 +64,7 @@ export interface SessionMessagesResponse {
 }
 
 /**
- * Send a message to chat API
+ * Send a message to chat API (non-streaming fallback)
  */
 export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
   try {
@@ -71,6 +88,90 @@ export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
       throw new Error(getUserFriendlyErrorMessage(error));
     }
     throw error;
+  }
+}
+
+/**
+ * Stream a chat response via Server-Sent Events
+ */
+export async function sendMessageStream(
+  request: ChatRequest,
+  handlers: ChatStreamHandlers,
+): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    if (!response.body) {
+      throw new Error('Streaming is not supported in this browser.');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
+
+      for (const eventBlock of events) {
+        const dataLine = eventBlock
+          .split('\n')
+          .find((line) => line.startsWith('data: '));
+
+        if (!dataLine) {
+          continue;
+        }
+
+        const payload = JSON.parse(dataLine.slice(6)) as {
+          type: string;
+          content?: string;
+          session_id?: string;
+          reply_message?: Message;
+          sources?: SourceCitation[];
+          detail?: string;
+        };
+
+        if (payload.type === 'token' && payload.content) {
+          handlers.onToken(payload.content);
+        } else if (payload.type === 'done' && payload.session_id && payload.reply_message) {
+          handlers.onDone({
+            session_id: payload.session_id,
+            reply_message: {
+              ...payload.reply_message,
+              sources: payload.sources,
+            },
+            sources: payload.sources,
+          });
+        } else if (payload.type === 'error') {
+          throw new Error(payload.detail || 'Streaming failed');
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error streaming message:', error);
+    if (error instanceof Error) {
+      handlers.onError(new Error(getUserFriendlyErrorMessage(error)));
+      return;
+    }
+    handlers.onError(new Error('Streaming failed unexpectedly.'));
   }
 }
 
@@ -124,6 +225,34 @@ export async function deleteSession(sessionId: string): Promise<void> {
     }
   } catch (error) {
     console.error('Error deleting session:', error);
+    throw error;
+  }
+}
+
+/**
+ * Rename a session
+ */
+export async function updateSessionTitle(
+  sessionId: string,
+  title: string,
+): Promise<SessionSummary> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating session title:', error);
     throw error;
   }
 }

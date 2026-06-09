@@ -16,6 +16,10 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# API URL is baked in at build time (browser calls localhost, not Docker service name)
+ARG VITE_API_URL=http://localhost:8000/api
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build application
 RUN npm run build
 

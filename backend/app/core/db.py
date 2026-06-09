@@ -8,10 +8,12 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
 # Create database engine
-engine = create_engine(
-    "sqlite:///./neuro_tutor.db", 
-    connect_args={"check_same_thread": False}  # For SQLite
+_connect_args = (
+    {"check_same_thread": False}
+    if settings.database_url.startswith("sqlite")
+    else {}
 )
+engine = create_engine(settings.database_url, connect_args=_connect_args)
 
 # Create SessionLocal class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
